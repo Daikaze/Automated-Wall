@@ -1,43 +1,73 @@
-# Smart Wall Architect v0.1.0
+# Smart Wall Architect 0.1.0
 
-Image-based wall drafting for **Foundry VTT v11 and v14**. Built for Inkarnate and other PNG/JPEG/WebP maps. **GM-only**, English UI.
+**A first playable prototype for Foundry VTT v11 and v14** for raster battle maps from Inkarnate or any other source. English UI. GM only.
 
-**Prototype notice:** This is a heuristic edge/color line detector, not a trained AI model. It suggests candidate walls and possible gaps; its predictions can be wrong on textured maps, curved walls, furniture and shadows. Door and window candidates must be manually reviewed. Do NOT apply blindly.
+> This is a **semi-automatic, rule-based image detector**. It is not an AI vision model. It will produce imperfect / false-positive wall lines on artistic battle maps. It **does not automatically claim to distinguish doors and windows**. Possible gaps are REVIEW proposals and are not applied until the GM marks them as Door, Window, or Wall.
 
-## Features
-- One module with V11 and V14 scene-control adapters.
-- Open from the **Walls** controls; console fallback: \`game.modules.get("smart-wall-architect").api.open()\`.
-- Scan Scene background or local PNG/JPG/WebP image, using horizontal, vertical and 45° raster line detection.
-- Sensitivity, minimum segment length, and optional wall-color sampling.
-- Pink proposed openings are never applied until a GM changes them to Door/Window/Wall.
-- Canvas review: select, change type, manually draw or erase.
-- Native Foundry Wall, Door and Window documents with standard movement, vision, light and sound settings.
-- Preserve existing walls, skip near-exact duplicates, JSON backup export, Undo latest module batch.
+## Features implemented
 
-## Install from Foundry
-Module manifest URL:
+- Button in the **Walls** scene controls (compatible adapters for v11 array and v14 record formats).
+- Read scene background, or choose a local PNG / JPG / WebP with a file picker.
+- Local edge / color-matching line analysis, oriented horizontally, vertically or at ±45°.
+- Automatic proposals of gaps between collinear walls; never applied without human review.
+- Color-coded preview (yellow walls, purple doors, cyan windows, pink review proposals).
+- Select individual lines, change types, delete lines; drag to draw new lines of each type.
+- Adjustable detection sensitivity, minimum segment length and optional wall-color sample (click one wall pixel in the preview).
+- Scrollable zoom and resizable / draggable preview window.
+- Safely create Foundry-native Wall documents after confirmation; existing walls are never automatically erased.
+- Default duplicates filter; export a JSON backup of current walls; undo the last module batch using stored ids.
+- Entirely local scan; no servers, no image uploads, no API keys.
 
-\`https://raw.githubusercontent.com/Daikaze/Automated-Wall/main/module.json\`
+## Install
 
-The \`download\` URL points to a GitHub Release asset named \`smart-wall-architect.zip\`. A GitHub Actions workflow packages and publishes it after pushes to \`main\` when repository Actions have permission to write releases. If no release appears, use the ZIP from the project's GitHub releases once published or manually install source files under \`Data/modules/smart-wall-architect\`.
+1. Unzip `smart-wall-architect-v0.2.0.zip`.
+2. Copy the `smart-wall-architect` folder to your Foundry user data `Data/modules/` directory.
+3. Restart Foundry if necessary, enable **Smart Wall Architect** under Game Settings → Manage Modules.
+4. Open a scene that uses a PNG/JPG/WebP battle map, then select the **Walls** tool and click the Smart Wall Architect icon (drafting compass icon).
+5. Click **Analyze Image**. Check each proposed line; convert candidate openings with the **Selected segment** dropdown, or draw your own door/window by dragging.
+6. Click **Download existing walls backup** if desired, and **Apply Reviewed Walls**.
+7. **Undo Last Module Batch** removes only the latest batch recorded by this module for this scene.
 
-## Usage
-1. Open a Scene with a PNG/JPG/WebP map.
-2. Select the **Walls** controls and open **Smart Wall Architect**.
-3. Click **Analyze Image**. Inspect the color-coded lines.
-4. Fix mistakes, draw Doors/Windows, and convert any pink proposed openings you accept.
-5. Optionally **Download wall backup**, then **Apply Reviewed Walls**.
-6. Use **Undo Last Module Batch** to remove the last batch made by the module.
+If scene-control integration conflicts with another module, GM users may open the browser console (F12) and run:
 
-### Known limitations
-- No reliable fully automatic door/window recognition from artwork yet.
-- Long straight walls work better than irregular/curved ones.
-- Walls are based on raster pixels; verify offsets and alignment before applying.
-- Remote image sources may block readback of image pixels due to CORS. Use the Local image picker.
-- The current undo is one batch per Scene, not full version history.
-- Runtime testing inside Foundry v11 and v14 is still required.
+```js
+game.modules.get('smart-wall-architect').api.open()
+```
 
-## Development
-\`node --test tests/detection.test.mjs\` tests the detection engine. The repository workflow validates scripts and creates versioned release ZIP files.
+## Important limitations
 
-MIT licensed. Not affiliated with Foundry Gaming LLC.
+- Image-only recognition cannot reliably infer which colored marks are walls, doors, windows, furniture, shadows, or map-grid lines. Preview and review are essential. Complex Inkarnate styles may need sampling or manual adjustment.
+- Auto scanner currently primarily handles long straight segments at 0°, 45°, 90°, and 135°. Curved walls and irregular diagonals can be added manually.
+- Backgrounds with offsets should be checked carefully after apply. Position mapping uses Foundry SceneDimensions sceneX/sceneY, sceneWidth/sceneHeight, and background offsets.
+- The **local image** option is for scanning an image aligned to the Scene background. If its crop/aspect/placement differs from the Scene image, coordinates will not match.
+- It scans the Scene background; it does not merge separate overhead tiles into the raster.
+- Requires an ordinary raster background, not a video. Remote image hosts that block cross-origin pixel access require a local image copy.
+- Undo only remembers one batch per Scene and will remove those ids even if the GM subsequently manually edits them. Download a backup first if needed.
+- Code/API integration was statically checked and image-analysis unit-tested; an actual Foundry V11/V14 runtime was **not available** in this environment for end-to-end UI testing.
+
+## Technical layout
+
+- `scripts/main.mjs` - runtime integration, editor, image loading, Foundry Wall creation
+- `scripts/detection.mjs` - isolated raster scan + openings proposal engine
+- `styles/main.css` - interface styling
+- `tests/detection.test.mjs` - synthetic raster tests (run with Node v22, `node --test tests/`)
+
+## Roadmap
+
+- v0.2: stronger region segmentation and per-map recognition templates, diagonal/curved tracing
+- v0.3: robust door-arc and window-pattern classifiers, review confidence and learning from corrections
+- v0.4: in-canvas editing mode and optional ML classification (without requiring a paid cloud API)
+
+MIT licensed. This module is not affiliated with Foundry Gaming LLC.
+
+## v0.2.0 — Inkarnate castle feedback
+
+- New stone/wood/any-material mask and orientation-aware gradients reduce decorative false positives.
+- 45° detection OFF by default; enable only if needed.
+- Drag-select a building/room scan area to skip gardens, roads and unrelated decorations; **Full map** resets the selection.
+- Scan preserves hand-added walls and manually reviewed segments.
+- Multiple wall-colour samples supported. Do not sample grass: a green sample will be flagged as potentially foliage.
+- **Connected Wall Chain**: click corners to add seamlessly connected walls. Use right-click, Escape or Finish chain to stop.
+- All predictions remain drafts. Door/window labels still require a GM review.
+
+Known limitation: organic/curved masonry and arbitrary diagonals are not fully recovered by this local heuristic detector.

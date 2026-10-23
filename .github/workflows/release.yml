@@ -1,0 +1,32 @@
+name: Package Foundry Module
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate source
+        run: |
+          node --check scripts/main.mjs
+          node --check scripts/detection.mjs
+          node --test tests/detection.test.mjs
+      - name: Package module and publish version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./module.json').version")
+          TAG="v${VERSION}"
+          mkdir -p "build/smart-wall-architect"
+          cp module.json README.md LICENSE "build/smart-wall-architect/"
+          cp -r scripts styles "build/smart-wall-architect/"
+          (cd build && zip -qr ../smart-wall-architect.zip smart-wall-architect)
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "Smart Wall Architect $TAG" --notes "Foundry V11 and V14 prototype; review scanned walls before applying." --target "$GITHUB_SHA" --latest
+          fi
+          gh release upload "$TAG" smart-wall-architect.zip --clobber

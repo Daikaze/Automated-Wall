@@ -1,0 +1,25 @@
+{
+  "id": "smart-wall-architect",
+  "title": "Smart Wall Architect",
+  "description": "GM-only raster wall detection, door/window draft editor, preview and safe wall creation for Foundry V11 and V14.",
+  "version": "0.1.0",
+  "authors": [
+    {
+      "name": "Daikaze & ChatGPT"
+    }
+  ],
+  "compatibility": {
+    "minimum": "11",
+    "verified": "14"
+  },
+  "esmodules": [
+    "scripts/main.mjs"
+  ],
+  "styles": [
+    "styles/main.css"
+  ],
+  "url": "https://github.com/Daikaze/Automated-Wall",
+  "manifest": "https://raw.githubusercontent.com/Daikaze/Automated-Wall/main/module.json",
+  "download": "https://github.com/Daikaze/Automated-Wall/releases/latest/download/smart-wall-architect.zip",
+  "license": "MIT"
+}
